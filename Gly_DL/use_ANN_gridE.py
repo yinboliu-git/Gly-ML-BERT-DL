@@ -419,22 +419,21 @@ if __name__ == '__main__':
     # /mnt/raid5/data4/publice/gly_site_pred/tape_fea/fold1
     for ctl in ctl_list:
         if ctl == 'CLS':
+        ## cls
             need = 0
             average = 'no'
             use_fold_ANN(model_type_list=model_list, param=param, number=number, train_dir=train_dir,
                          label_dir=label_dir, ctl=ctl, bert_type=nlp_type, need=need, average=average)
 
         if ctl == 'all':
-            need = 0
-            average = 'no'
-            use_fold_ANN(model_type_list=model_list, param=param, number=number, train_dir=train_dir,
-                                     label_dir=label_dir, ctl=ctl, bert_type=nlp_type, need=need,average=average)
-
+        
+        ## K
             need = 15
             average = 'no'
             use_fold_ANN(model_type_list=model_list, param=param, number=number, train_dir=train_dir,
                                      label_dir=label_dir, ctl=ctl, bert_type=nlp_type, need=need,average=average)
-
+        
+        ## average
             need = 0
             average = 'yes'
             use_fold_ANN(model_type_list=model_list, param=param, number=number, train_dir=train_dir,
