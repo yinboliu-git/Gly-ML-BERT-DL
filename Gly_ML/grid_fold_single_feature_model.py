@@ -59,22 +59,22 @@ def knn_xlf(n=2, p=1):
 
 param_grid = {
     'rf': {
-        'max_depth': [2, 4, 8],
-        'n_estimators': [1600, 1800, 2000],
+        'max_depth': [2, 4, 6, 8],
+        'n_estimators': [1600, 1800, 2000,2200],
     },  # 请改回来 测试用
     'xgb': {
-        'max_depth': [2, 4, 8],
-        'learning_rate': [0.005, 0.01, 0.02],
-        'n_estimators': [1800, 2000, 2200, ],
+        'max_depth': [2, 4, 6, 8],
+        'learning_rate': [0.005, 0.01, 0.02,0.04],
+        'n_estimators': [1600, 1800, 2000, 2200],
     },
     'svm': {
         "kernel": ['rbf'],
-        "gamma": [2 ** i for i in range(-7, -3)],
-        "C": [2 ** i for i in range(-1, 3)],
+        "gamma": [2 ** i for i in range(-7, 0)],
+        "C": [2 ** i for i in range(-1, 4)],
     },
 
     'knn': {
-        'n_neighbors': [2, 4, 6],
+        'n_neighbors': [2, 4, 6, 8],
         'p': [1, 2, 3, 4],
     }
 
