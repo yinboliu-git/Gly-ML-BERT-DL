@@ -291,6 +291,7 @@ class UseANN(object):
                                           ), merge_mode='concat'))
         # add output layer
         model.add(Flatten())
+        model.add(Dropout(0.2))
         model.add(Dense(32, kernel_regularizer=tf.keras.regularizers.l2(0.001),
                         activity_regularizer=tf.keras.regularizers.l1(0.001)))
         model.add(Activation('relu'))
@@ -311,6 +312,7 @@ class UseANN(object):
                                           ), merge_mode='concat'))
         # add output layer
         model.add(Flatten())
+        model.add(Dropout(0.2))
         model.add(Dense(32, kernel_regularizer=tf.keras.regularizers.l2(0.001),
                         activity_regularizer=tf.keras.regularizers.l1(0.001)))
         model.add(Activation('relu'))
@@ -384,6 +386,8 @@ class UseANN(object):
         print('m_type={} epoch={}  bs={}  l={} beta={}'.format(model_type, e, b, l, beta))
         print('\n训练集数据结构如下：')
         print([self.train.shape[0],self.train.shape[1],self.train.shape[2]], '\n')
+        print('average:{}  K:{}'.format(self.average, self.need))
+
         if model_type == 'CNN1D':
             self.__use_CNN1D()
         elif model_type == 'BiLSTM':
@@ -534,11 +538,11 @@ def use_fold_ANN(model_type_list=[],number=[1], train_dir='./', label_dir='./', 
 if __name__ == '__main__':
 
     ctl_list = ['CLS']
-    type_list = ['bert']
+    type_list = ['probert']
     for type_ in type_list:
         print(type_)
 
-        nlp_type = 'score_' + type_  # new_bert, new_probert, new_tape
+        nlp_type = 'score_test_' + type_  # new_bert, new_probert, new_tape
         model_list = ['CNN1D', 'BiLSTM', 'CNN1D_BiLSTM']
         # model_list = ['CNN1D']
 
@@ -565,20 +569,20 @@ if __name__ == '__main__':
                 use_fold_ANN(model_type_list=model_list, number=number, train_dir=train_dir,
                              label_dir=label_dir, ctl=ctl, bert_type=nlp_type, need=need, average=average,j=j)
 
-        #     if ctl == 'all':
+            if ctl == 'all':
         #         # need = 0
         #         # average = 'no'
         #         # use_fold_ANN(model_type_list=model_list,  number=number, train_dir=train_dir,
         #         #                          label_dir=label_dir, ctl=ctl, bert_type=nlp_type, need=need,average=average,j=j)
         #
-        #         need = 15
-        #         average = 'no'
-        #         use_fold_ANN(model_type_list=model_list, number=number, train_dir=train_dir,
-        #                      label_dir=label_dir, ctl=ctl, bert_type=nlp_type, need=need, average=average, j=j)
-        #         #
-        #         need = 0
-        #         average = 'yes'
-        #         use_fold_ANN(model_type_list=model_list, number=number, train_dir=train_dir,
-        #                      label_dir=label_dir, ctl=ctl, bert_type=nlp_type, need=need, average=average, j=j)
+                need = 15
+                average = 'no'
+                use_fold_ANN(model_type_list=model_list, number=number, train_dir=train_dir,
+                             label_dir=label_dir, ctl=ctl, bert_type=nlp_type, need=need, average=average, j=j)
+                #
+                need = 0
+                average = 'yes'
+                use_fold_ANN(model_type_list=model_list, number=number, train_dir=train_dir,
+                             label_dir=label_dir, ctl=ctl, bert_type=nlp_type, need=need, average=average, j=j)
         #
         # # use_fold_LSTM(param=[10,32,2e-4],number=3,train_dir=train_dir,label_dir=label_dir)

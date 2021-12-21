@@ -10,6 +10,7 @@ from sklearn.metrics import precision_recall_curve,auc
 from tensorflow_core.python.keras.backend import set_session
 import tensorflow.keras.backend as K
 from tensorflow_core.python.keras.callbacks import Callback
+from tensorflow_core.python.keras.utils import plot_model
 
 np.random.seed(1337)
 from sklearn.metrics import roc_auc_score, confusion_matrix
@@ -184,10 +185,11 @@ class UseANN(object):
         keras.backend.clear_session()
 
         model = Sequential()
+        model.add(Reshape(input_shape=(self.train.shape[1], self.train.shape[2]),
+                          target_shape=(self.train.shape[1], self.train.shape[2])))
         model.add(Conv1D(64, kernel_size=3, padding='same',batch_input_shape=(None, self.train.shape[1], self.train.shape[2])))
         # add output layer
         model.add(Flatten())
-        model.add(Dropout(0.2))
         model.add(Dense(32, kernel_regularizer=tf.keras.regularizers.l2(0.001),
                         activity_regularizer=tf.keras.regularizers.l1(0.001)))
         model.add(Activation('relu'))
@@ -202,20 +204,19 @@ class UseANN(object):
         keras.backend.clear_session()
 
         model = Sequential()
+        model.add(Reshape(input_shape=(self.train.shape[1], self.train.shape[2]),target_shape=(self.train.shape[1], self.train.shape[2])))
         model.add(Bidirectional(CuDNNLSTM(units=64,
-                                          batch_input_shape=(None, self.train.shape[1], self.train.shape[2]),
                                           return_sequences=True,
-                                          # True: output at all steps. False: output as last step.
                                           ), merge_mode='concat'))
         # add output layer
         model.add(Flatten())
+        model.add(Dropout(0.2))
         model.add(Dense(32, kernel_regularizer=tf.keras.regularizers.l2(0.001),
                         activity_regularizer=tf.keras.regularizers.l1(0.001)))
         model.add(Activation('relu'))
         model.add(Dropout(0.2))
         model.add(Dense(2))
         model.add(Activation('softmax'))
-        sys.stdout.flush()
         self.model = model
         return model
 
@@ -223,6 +224,8 @@ class UseANN(object):
         keras.backend.clear_session()
 
         model = Sequential()
+        model.add(Reshape(input_shape=(self.train.shape[1], self.train.shape[2]),
+                          target_shape=(self.train.shape[1], self.train.shape[2])))
         model.add(Conv1D(64, kernel_size=3, padding='same',batch_input_shape=(None, self.train.shape[1], self.train.shape[2])))
         model.add(Bidirectional(CuDNNLSTM(units=64,
                                           return_sequences=True,
@@ -289,6 +292,9 @@ class UseANN(object):
 
         adam = Adam(l, beta_1=beta)
         self.model.compile(optimizer=adam, loss='binary_crossentropy', metrics=['accuracy'],)
+
+        plot_model(self.model, to_file=self.model_type + '.png',show_shapes=True,dpi=600)
+
         self.model.fit(self.train, self.y_train, epochs=e, batch_size=b, verbose=2, validation_split=0, use_multiprocessing=True, workers=4, callbacks=[losshistory])
         self.val_score = losshistory.val_pre_score
         return losshistory.val_EI
@@ -316,6 +322,28 @@ class UseANN(object):
 
     def predict_EI(self):
         return self.EI
+
+    def plt(self,model_type, e=2, b=32, l=2e-4, beta=0.9):
+        self.e = e
+        self.b = b
+        self.l = l
+        self.beta = beta
+        self.model_type = model_type
+        print('\nfold{}  此次参数搜索如下：'.format(self.fold))
+        print('m_type={} epoch={}  bs={}  l={} beta={}'.format(model_type, e, b, l, beta))
+        print('\n训练集数据结构如下：')
+        print([self.train.shape[0], self.train.shape[1], self.train.shape[2]], '\n')
+        if model_type == 'CNN1D':
+            self.__use_CNN1D()
+        elif model_type == 'BiLSTM':
+            self.__use_BiLSTM()
+        elif model_type == 'CNN1D_BiLSTM':
+            self.__use_CNN1D_BiLSTM()
+        else:
+            print('model_type 输入错误..')
+        adam = Adam()
+        self.model.compile(optimizer=adam, loss='binary_crossentropy', metrics=['accuracy'], )
+        plot_model(self.model, to_file= './' +self.model_type + '.png', show_shapes=True, dpi=600)
 
 
 def use_grid_ANN(use_class, model_type_list=[], param={}):
@@ -384,26 +412,28 @@ def use_fold_ANN(model_type_list=[],param={},number=[1], train_dir='./', label_d
         Train_ANN.generate_1D_test(test_file,test_label_file)
         print('数据读取完成...')
 
-        param_EI = use_grid_ANN(Train_ANN,model_type_list,param)
-        param_EI = pd.DataFrame(param_EI,columns=None,index=None)
-        param_EI.to_csv('./' + bert_type +'/' +ctl_+ '/fold' + str(i) + '/parm_EI.csv', header=False,index=False)
-        print(ctl + ' fold' + str(i) + '保存完成...')
+        # param_EI = use_grid_ANN(Train_ANN,model_type_list,param)
+        # param_EI = pd.DataFrame(param_EI,columns=None,index=None)
+        # param_EI.to_csv('./' + bert_type +'/' +ctl_+ '/fold' + str(i) + '/parm_EI.csv', header=False,index=False)
+        # print(ctl + ' fold' + str(i) + '保存完成...')
 
-        del param_EI
+        # del param_EI
+        for model_type in model_type_list:
+            Train_ANN.plt(model_type=model_type)
         del Train_ANN
 
 if __name__ == '__main__':
 
     ctl_list = ['all', 'CLS']
     nlp_type = 'new_bert' # new_bert, new_probert, new_tape
-    number = [7,8,9,10]
+    number = [1]
 
     # need = 15 # 0 = ctl, 15 = K,
     # average = 'no' # yes, no
     # m_type=CNN1D epoch=31  bs=32  l=2e-05 beta=0.88
     # model_list = [ 'CNN1D_BiLSTM', 'BiLSTM','CNN1D']
 
-    model_list = ['CNN1D','BiLSTM' ,'CNN1D_BiLSTM']
+    model_list = ['CNN1D', 'BiLSTM', 'CNN1D_BiLSTM']
     print(model_list)
     
     param = {
@@ -419,24 +449,25 @@ if __name__ == '__main__':
     # /mnt/raid5/data4/publice/gly_site_pred/tape_fea/fold1
     for ctl in ctl_list:
         if ctl == 'CLS':
-        ## cls
             need = 0
             average = 'no'
             use_fold_ANN(model_type_list=model_list, param=param, number=number, train_dir=train_dir,
                          label_dir=label_dir, ctl=ctl, bert_type=nlp_type, need=need, average=average)
 
-        if ctl == 'all':
-        
-        ## K
-            need = 15
-            average = 'no'
-            use_fold_ANN(model_type_list=model_list, param=param, number=number, train_dir=train_dir,
-                                     label_dir=label_dir, ctl=ctl, bert_type=nlp_type, need=need,average=average)
-        
-        ## average
-            need = 0
-            average = 'yes'
-            use_fold_ANN(model_type_list=model_list, param=param, number=number, train_dir=train_dir,
-                         label_dir=label_dir, ctl=ctl, bert_type=nlp_type, need=need,average=average)
-
-    # use_fold_LSTM(param=[10,32,2e-4],number=3,train_dir=train_dir,label_dir=label_dir)
+    #     if ctl == 'all':
+    #         need = 0
+    #         average = 'no'
+    #         use_fold_ANN(model_type_list=model_list, param=param, number=number, train_dir=train_dir,
+    #                                  label_dir=label_dir, ctl=ctl, bert_type=nlp_type, need=need,average=average)
+    #
+    #         need = 15
+    #         average = 'no'
+    #         use_fold_ANN(model_type_list=model_list, param=param, number=number, train_dir=train_dir,
+    #                                  label_dir=label_dir, ctl=ctl, bert_type=nlp_type, need=need,average=average)
+    #
+    #         need = 0
+    #         average = 'yes'
+    #         use_fold_ANN(model_type_list=model_list, param=param, number=number, train_dir=train_dir,
+    #                      label_dir=label_dir, ctl=ctl, bert_type=nlp_type, need=need,average=average)
+    #
+    # # use_fold_LSTM(param=[10,32,2e-4],number=3,train_dir=train_dir,label_dir=label_dir)
